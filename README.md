@@ -101,7 +101,7 @@ When activated in a project, the agent creates and maintains a `.loop/` director
 
 1. **Never ask the human a question and wait**: Make the most reasonable decision, log it in `DECISIONS.md`, and keep moving.
 2. **The gate is the judge**: "Done" means `scripts/verify.sh` exits `0` and all criteria in `GOAL.md` are satisfied.
-3. **Never move the goalposts**: Never delete tests, weaken assertions, or edit thresholds to pass artificially.
+3. **Never move the goalposts**: Never delete tests, weaken assertions, or edit thresholds to pass artificially. If a test is defective, run a Meta-Verification Audit and log the exact diff and reason in `DECISIONS.md`.
 4. **Never block the terminal**: Every command that can hang must use `timeout`. Background long-running processes. Pass `-y`, `--yes`, `DEBIAN_FRONTEND=noninteractive`.
 5. **Stay inside the project**: Never touch `~/.ssh`, cloud credentials, system configurations, or parent directories.
 6. **Spend zero money without explicit permission**: Paid APIs, cloud deployments, and production push require Tier 2 or Tier 3 permissions in `GOAL.md`.
@@ -123,16 +123,17 @@ flowchart TD
     B1 --> A
     B -->|Gate Healthy| C[3. CHOOSE: Next task from TASKS.md]
     C --> D[4. PLAN: 3-6 line plan in LOG.md]
-    D --> E[5. TEST: Write test / check first]
-    E --> F[6. BUILD: Minimal code change]
-    F --> G[7. VERIFY: Run checks & scripts/verify.sh]
-    G -->|Pass| H1[8a. PASS: Commit, mark [x], reset error count]
-    G -->|Fail| H2[8b. FAIL: Anti-Stuck Ladder & Error Fingerprint]
+    D --> E[5. TEST: Write test / check first - Red]
+    E --> F[6. BUILD: Minimal code change - Green]
+    F --> G1[7. REFACTOR: Lint, types & clean code - Refactor]
+    G1 --> G[8. VERIFY: Run checks & scripts/verify.sh]
+    G -->|Pass| H1[9a. PASS: Commit, mark [x], reset error count]
+    G -->|Fail| H2[9b. FAIL: Anti-Stuck Ladder & Meta-Verification]
     H1 --> I{All Tasks Done?}
     H2 --> C
     I -->|No| A
-    I -->|Yes| J[9. FULL GATE: Run full verify.sh]
-    J -->|Pass| K[10. FINISHING: Write FINAL_REPORT.md, STATE=FINISHED]
+    I -->|Yes| J[10. FULL GATE: Run full 3-stage verify.sh]
+    J -->|Pass| K[11. FINISHING: Write FINAL_REPORT.md, STATE=FINISHED]
     J -->|Fail| L[Add fix tasks to TASKS.md]
     L --> A
 ```
@@ -152,10 +153,13 @@ When a command or test fails, the agent generates an **error fingerprint** (norm
 ### The Strategy Ladder:
 1. **Attempt 1**: Apply the direct, most likely fix.
 2. **Attempt 2**: Deep diagnosis (reproduce in minimal isolated test, inspect full stacktrace, verify versions).
-3. **Attempt 3 (Three-Strike Rule)**: Pivot strategy completely. Switch library, algorithm, or pattern.
-4. **Attempt 4**: Simplify (reduce scope, hardcode one working path, then generalize).
-5. **Attempt 5**: Implement a clean fallback (stub with clear warning, mocked asset, documented limitation).
-6. **Attempt 6**: Mark task `- [!] BLOCKED <reason>` in `TASKS.md`, commit, and proceed to next task.
+3. **Attempt 3 (Three-Strike Rule & Meta-Verification Audit)**:
+   - Pause application code changes.
+   - Run a **Meta-Verification Audit**: inspect `scripts/verify.sh` and the failing test for flawed mock signatures, impossible assertions, or environment bugs.
+   - If test is flawed, fix test and log diff in `DECISIONS.md`.
+   - If test is valid, pivot strategy completely using alternative pattern or library.
+4. **Attempt 4 (Block & Move On)**:
+   - If still failing, mark task `- [!] BLOCKED <reason>` in `TASKS.md`, commit, and immediately proceed to the next task to prevent token and budget burn. Revisit only at the end if budget remains.
 
 ---
 
@@ -313,8 +317,9 @@ cp -r /path/to/autonomous-loop ~/.claude/skills/autonomous-loop
 # Launch with driver on a disposable machine
 cd ~/your-project
 export I_UNDERSTAND_SANDBOX=1
-export MAX_HOURS=8
-export MAX_RUNS=30
+export MAX_HOURS=2
+export MAX_RUNS=10
+export MAX_BUDGET_USD=5.00
 bash ~/.claude/skills/autonomous-loop/scripts/loop_driver.sh
 ```
 

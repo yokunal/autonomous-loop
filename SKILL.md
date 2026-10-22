@@ -22,7 +22,7 @@ Detail files (read only when needed):
 
 1. **Never ask the human a question and wait.** If something is ambiguous, choose the most reasonable option, write it in `.loop/DECISIONS.md` with one line of reasoning, and continue. Questions go in the final report.
 2. **The gate is the judge.** "Done" means the verify gate exits 0 and every acceptance criterion in `.loop/GOAL.md` is met. Not "it looks right to me".
-3. **Never move the goalposts.** Do not delete, skip, or weaken tests, lower thresholds, edit the gate to pass, or shrink the goal just to get green. A genuinely wrong test may be fixed, but log it under "Test changes" in `DECISIONS.md` with the reason. Passing by cheating is failure.
+3. **Never move the goalposts.** Do not delete, skip, or weaken tests, lower thresholds, edit the gate to pass, or shrink the goal just to get green. A genuinely wrong or broken test may be fixed, but only after running a Meta-Verification Audit (section 6.1) to diagnose the failure, and logging it under "Test changes" in `DECISIONS.md` with the exact diff and reasoning. Passing by cheating is failure.
 4. **Never block the terminal.** Every command that can hang gets `timeout`. Servers and long jobs run in the background with logs. Pass `-y`, `--yes`, `CI=1`, `DEBIAN_FRONTEND=noninteractive`, `< /dev/null` where relevant.
 5. **Stay inside the project.** Work only inside the project directory plus normal caches. Never touch `~/.ssh`, cloud credentials, system config, other projects, or other users' files.
 6. **Spend no money and make no irreversible external changes** unless `GOAL.md` explicitly allows it (see Safety Tiers, section 8). That covers paid APIs, cloud resources, live payments, emails/messages to real people, pushing to production, and force-pushing.
@@ -59,8 +59,8 @@ Do this in order, without asking the human anything:
    - **Acceptance criteria**: a numbered list where every item is checkable by a command, a test, or an inspected output file. If an item cannot be checked mechanically, rewrite it until it can (see `references/verify-patterns.md`, "Non-code goals").
    - Constraints (stack, versions, forbidden things)
    - **Safety tier** (section 8), default Tier 1
-   - **Budgets** (section 7), defaults if not given: 8 hours, 60 iterations, 5 attempts per task
-4. **Build the verify gate** at `scripts/verify.sh` (or `make verify`). It must exit non-zero for any unmet criterion and print which stage failed. Pick the pattern for the stack from `references/verify-patterns.md`. An unconfigured gate must fail, never pass by default. Provide `--quick` (fast checks only) and full modes.
+   - **Budgets** (section 7), defaults if not given: 2 hours, 25 iterations, 3 attempts per task, $5.00 money cap
+4. **Build the layered verify gate** at `scripts/verify.sh` (or `make verify`). It must exit non-zero for any unmet criterion and print which stage failed. Follow the layered pattern: Stage 1 Correctness (tests), Stage 2 Code Quality (linters/types), Stage 3 Cleanliness (formatting/dead code). Run a sanity check ("Verify the Verifier") to prove the gate fails when checks fail and exits 0 only when all stages pass. Provide `--quick` (fast Stage 1 checks only) and full modes.
 5. **Write `TASKS.md`**: break the goal into small tasks, each doable in one iteration (about 10 to 30 minutes), ordered so something runnable exists as early as possible (walking skeleton first). Last tasks are always: full verify, deployment or packaging if relevant, final report.
 6. **Commit** (`git add -A && git commit -m "loop: intake"`), set `STATE` to `RUNNING`, and start the loop.
 
@@ -74,13 +74,14 @@ Do this in order, without asking the human anything:
 2. HEALTH   If the repo is broken or the gate got worse than the last good tag, fix or revert FIRST.
 3. CHOOSE   Take the first unchecked, non-blocked task. Never start two tasks at once.
 4. PLAN     Write 3 to 6 lines in LOG.md: what, how, and how I will know it worked.
-5. TEST     For code tasks, write or extend the test first. For other tasks, define the check first.
-6. BUILD    Smallest change that satisfies the check.
-7. VERIFY   Run the relevant checks with `timeout`, then `scripts/verify.sh --quick`.
-8a. PASS    Commit (`Txx: title`), tick the task, tag good states (`git tag -f good-<time>` when the full gate passes),
+5. TEST     Write or extend the test/check first (Red).
+6. BUILD    Smallest change that satisfies the check (Green).
+7. REFACTOR & QUALITY  Run linters, type checks, and formatting. Clean up duplicate code and temporary hacks before declaring the task done. (Refactor).
+8. VERIFY   Run the relevant checks with `timeout`, then `scripts/verify.sh --quick`.
+9a. PASS    Commit (`Txx: title`), tick the task, tag good states (`git tag -f good-<time>` when the full gate passes),
             append to LOG.md, reset the consecutive failure count, go to 1.
-8b. FAIL    Anti-stuck protocol (section 6). Never move on silently.
-9. DONE?    When all tasks are ticked or blocked: run the FULL gate.
+9b. FAIL    Anti-stuck protocol (section 6). Never move on silently.
+10. DONE?   When all tasks are ticked or blocked: run the FULL gate.
             Exit 0 and all criteria met: Finishing (section 11).
             Otherwise add one task per failing criterion and continue.
 ```
@@ -110,8 +111,12 @@ When something fails, reduce it to a fingerprint: exception type plus the key me
 
 - **First occurrence**: append the fingerprint, apply the most likely fix.
 - **Second occurrence**: you are repeating yourself. Read the full traceback and the relevant source or docs (help text, `--help`, package docs, web search if available). Try a genuinely different fix.
-- **Third occurrence (3-strike)**: change strategy completely. Use the ladder below. Log the new strategy in `DECISIONS.md`.
-- **After 5 failed attempts on one task**: mark it `- [!] BLOCKED <reason>`, implement the best graceful fallback, commit, and move to the next task. Revisit blocked tasks at the end if budget remains.
+- **Third occurrence (3-strike) / Meta-Verification Audit**:
+  If a task fails 3 times in a row, PAUSE all application edits and execute a **Meta-Verification Audit**:
+  1. Inspect `scripts/verify.sh` and the failing test itself. Check for syntax errors, impossible assertions, outdated mock signatures, or wrong environment assumptions.
+  2. If the test itself is genuinely defective: fix the test, record the exact diff and reason under "Test changes" in `DECISIONS.md`, and rerun.
+  3. If the test is valid: change strategy completely using the ladder below. Log the strategy in `DECISIONS.md`.
+  4. If the task cannot be solved within 3 attempts: mark it `- [!] BLOCKED <reason>`, implement the best graceful fallback, commit, and move immediately to the next task to protect token and wallet budgets. Revisit blocked tasks at the end only if budget remains.
 
 ### 6.2 Strategy ladder (go down one step per strike)
 1. Retry with the obvious fix.
@@ -136,12 +141,12 @@ Defaults (override in `GOAL.md`):
 
 | Budget | Default |
 |---|---|
-| Wall-clock | 8 hours since the first `LOG.md` entry (check with `date`) |
-| Iterations | 60 |
-| Attempts per task | 5 |
+| Wall-clock | 2 hours since the first `LOG.md` entry (check with `date`) |
+| Iterations | 25 |
+| Attempts per task | 3 |
 | Consecutive iterations with no commit and no new idea | 3 |
 | Disk | stop above 90 percent after cleaning caches |
-| Money | 0 unless `GOAL.md` sets a cap; never exceed it |
+| Money | $5.00 default cap; never exceed it |
 
 Stop and run Finishing when **any** is true:
 - Gate exits 0 and all acceptance criteria are met (**success**)

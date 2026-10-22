@@ -97,10 +97,12 @@ Settings (environment variables):
 | Variable | Default | Meaning |
 |---|---|---|
 | `PROJECT_DIR` | current directory | Project root |
-| `MAX_HOURS` | 8 | Total time budget |
-| `MAX_RUNS` | 30 | Max agent sessions |
+| `MAX_HOURS` | 2 | Total time budget (conservative default) |
+| `MAX_RUNS` | 10 | Max agent sessions |
 | `MAX_IDLE_RUNS` | 3 | Sessions with no progress before stopping |
-| `RUN_TIMEOUT` | 5400 | Seconds allowed per session |
+| `MAX_BUDGET_USD` | 5.00 | Hard cost budget passed to `--max-budget-usd` |
+| `RUN_TIMEOUT` | 3600 | Seconds allowed per session |
+| `AUTO_ROLLBACK` | 1 | Auto-rollback if git index or files get corrupted |
 | `PAUSE` | 20 | Seconds between sessions |
 | `AGENT_CMD` | (claude, see below) | Any shell command that runs one agent session; it can read `$PROMPT_FILE` |
 | `MAX_TURNS` | 80 | Claude Code `--max-turns` |
@@ -111,10 +113,10 @@ Settings (environment variables):
 
 ```bash
 cd ~/myproject
-bash ~/.claude/skills/autonomous-loop/scripts/init_loop.sh .      # creates .loop/ and a failing verify stub
+bash ~/.claude/skills/autonomous-loop/scripts/init_loop.sh .      # creates .loop/, denylist, and layered verify stub
 # edit .loop/GOAL.md (or just write your request in .loop/GOAL.md and point to PRD.md)
 export I_UNDERSTAND_SANDBOX=1      # only on the disposable machine
-export MAX_HOURS=8 MAX_RUNS=30
+export MAX_HOURS=2 MAX_RUNS=10 MAX_BUDGET_USD=5.00
 tmux new -s loop
 bash ~/.claude/skills/autonomous-loop/scripts/loop_driver.sh
 ```

@@ -35,10 +35,10 @@ write_if_missing .loop/GOAL.md <<'EOT'
 Tier 1 (sandbox).
 
 ## Budgets
-- Wall-clock: 8 hours
-- Iterations: 60
-- Attempts per task: 5
-- Money: 0
+- Wall-clock: 2 hours (default)
+- Iterations: 25
+- Attempts per task: 3
+- Money: $5.00 max (0 for Tier 1 sandbox)
 
 ## Out of scope
 -
@@ -89,7 +89,10 @@ Follow the autonomous-loop skill (or `.loop/PROTOCOL.md` if skills are unavailab
 First read `.loop/STATE`. If it says FINISHED or STOPPED, do nothing and exit.
 Otherwise resume: read `.loop/GOAL.md`, `.loop/TASKS.md`, `.loop/STATUS.md`, the tail of `.loop/LOG.md`, `.loop/ERRORS.md`, then run the loop.
 If `.loop/GOAL.md` is still the unfilled template, run Phase 0 (Intake) using PRD.md or the project files to define the goal.
-Never ask questions. Never weaken tests. Obey the budgets and safety tier in GOAL.md.
+Never ask questions. Follow Red-Green-Refactor: every task requires tests AND code quality/linter pass.
+Do not introduce architectural slop or ugly hacks just to pass tests.
+If verify fails 3 times on one task, run a Meta-Verification Audit on verify.sh or mark [!] BLOCKED.
+Never weaken tests without logging in DECISIONS.md. Obey the budgets and safety tier in GOAL.md.
 Work as many iterations as you can in this session, committing after each.
 When the full gate passes or a stop condition is met, write `.loop/FINAL_REPORT.md` and set `.loop/STATE`.
 EOT
@@ -100,10 +103,33 @@ if [ ! -e .loop/PROTOCOL.md ]; then cp "$SKILL_DIR/SKILL.md" .loop/PROTOCOL.md; 
 # A gate that FAILS until configured (never passes by default)
 write_if_missing scripts/verify.sh <<'EOT'
 #!/usr/bin/env bash
-# Verification gate. Exit 0 only when everything required passes.
+# Verification gate. Layered into:
+# Stage 1: Correctness (Unit/Integration tests)
+# Stage 2: Code Quality (Types & Linters: tsc, eslint, ruff, mypy)
+# Stage 3: Cleanliness & Refactor Check (Formatting, unused code)
+#
+# Usage:
+#   bash scripts/verify.sh --quick   (runs fast Stage 1 checks)
+#   bash scripts/verify.sh           (runs full all-stage checks)
+set -eo pipefail
+
+MODE="${1:-full}"
+
+echo "==> Stage 1: Correctness (Tests)"
 # The agent must replace this stub in Phase 0 (see references/verify-patterns.md).
 echo "VERIFY FAILED: NOT CONFIGURED. Edit scripts/verify.sh for this project."
 exit 2
+
+if [ "$MODE" = "full" ]; then
+  echo "==> Stage 2: Code Quality (Linters & Types)"
+  # Add: ruff check ., npm run lint, tsc --noEmit, etc.
+
+  echo "==> Stage 3: Cleanliness & Formatting"
+  # Add: prettier --check, black --check, etc.
+fi
+
+echo "VERIFY PASSED ($MODE mode)"
+exit 0
 EOT
 chmod +x scripts/verify.sh 2>/dev/null || true
 
@@ -112,6 +138,23 @@ touch .gitignore
 for p in "logs/" "run/" "debug/" ".env" ".loop/driver.log" ".loop/driver.lock" ".loop/session-*.log" "__pycache__/" ".venv/" "node_modules/"; do
   grep -qxF "$p" .gitignore || echo "$p" >> .gitignore
 done
+
+# Default safety permissions (denylist for dangerous commands)
+mkdir -p .claude
+write_if_missing .claude/settings.json <<'EOT'
+{
+  "permissions": {
+    "deny": [
+      "rm -rf /",
+      "rm -rf ~",
+      "git push --force*",
+      "git reset --hard*",
+      "mkfs*",
+      "dd if=*"
+    ]
+  }
+}
+EOT
 
 git add -A >/dev/null 2>&1 || true
 git -c user.name="${GIT_AUTHOR_NAME:-loop-agent}" -c user.email="${GIT_AUTHOR_EMAIL:-loop@localhost}" \
