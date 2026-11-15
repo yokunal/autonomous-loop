@@ -109,8 +109,8 @@ When activated in a project, the agent creates and maintains a `.loop/` director
 8. **Commit small and often**: Every finished task gets an atomic commit. The repository must always be rollback-ready.
 9. **Do not loop forever**: Strictly enforce wall-clock, iteration, and attempt budgets.
 10. **Be honest**: A clear "PARTIAL: here is what failed" report is infinitely better than a fake "SUCCESS".
-11. **Clean caches and ephemeral artifacts with explicit reasoning**: When cleaning project caches (`__pycache__`, `.pytest_cache`, `.mypy_cache`, `node_modules/.cache`, build caches), temporary test outputs, or unneeded debris, always state the explicit reason and request confirmation before deleting. Stay strictly within project boundaries.
-12. **Full write and delete access, but NEVER delete the whole codebase at any cost**: Full authority to write code and modify files. When deleting unneeded files, dead logic, or discarded changes, state the specific reason for user approval. Blanket/mass deletions of the codebase (e.g. `rm -rf *`, `rm -rf .`, or clearing out the repo) are strictly forbidden under all circumstances. Deletions must always be targeted to specific unneeded items.
+11. **Clean caches and ephemeral artifacts autonomously without prompting**: Automatically delete and clean caches (`__pycache__`, `.pytest_cache`, `.mypy_cache`, `node_modules/.cache`, build caches), temporary test outputs, mock fixtures, and unneeded debris without waiting for human intervention or asking every time. Maintain disk and repository cleanliness while staying strictly within project boundaries.
+12. **Routine write and delete is automatic; ONLY ask when deleting an entire codebase**: Full authority to write code, modify files, and delete unneeded code, dead files, or discarded changes automatically without prompting. However, deleting an entire codebase, wiping a project root, or performing mass deletions is NEVER automatic: you must explicitly state the full reason to the human and wait for explicit confirmation before any codebase-level deletion.
 
 ---
 
