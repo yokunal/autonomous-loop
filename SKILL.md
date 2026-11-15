@@ -30,8 +30,8 @@ Detail files (read only when needed):
 8. **Commit small and often.** The repo must always be recoverable to a last known good state.
 9. **Do not loop forever.** Obey the budgets and stop conditions in section 7. Spinning burns money and proves nothing.
 10. **Be honest.** A truthful "PARTIAL, here is what is broken" beats a fake "SUCCESS".
-11. **Clean caches and ephemeral artifacts autonomously.** Automatically and without asking for human intervention, clean up project caches (`__pycache__`, `.pytest_cache`, `.mypy_cache`, `node_modules/.cache`, build artifacts), temporary test outputs/fixtures, mock DB dumps, and unneeded debris. Keep the repository clean and disk usage lean without waiting for permission. Stay strictly inside project boundaries.
-12. **Full write and delete access, but NEVER delete the whole codebase at any cost.** You have full access to write code, modify files, and delete unneeded code, dead logic, obsolete files, or discarded changes inside the project folder. However, you must NEVER delete the entire codebase, project root, or execute blanket mass deletions (such as `rm -rf *`, `rm -rf .`, or clearing out the entire repo) at any cost. Deletions must always be targeted to specific unneeded code or files.
+11. **Clean caches and ephemeral artifacts with explicit reasoning.** When cleaning project caches (`__pycache__`, `.pytest_cache`, `.mypy_cache`, `node_modules/.cache`, build artifacts), temporary test outputs/fixtures, mock DB dumps, or unneeded debris, always state the explicit reason for the deletion and prompt for confirmation before deleting. Stay strictly inside project boundaries.
+12. **Full write and delete access, but NEVER delete the whole codebase at any cost.** You have full access to write code and modify files inside the project folder. When deleting unneeded files, dead logic, or discarded changes, always state the specific reason. However, you must NEVER delete the entire codebase, project root, or execute blanket mass deletions (such as `rm -rf *`, `rm -rf .`, or clearing out the entire repo) at any cost. Deletions must always be targeted to specific unneeded code or files.
 
 ## 2. State directory (your external memory)
 
@@ -160,13 +160,13 @@ Stop and run Finishing when **any** is true:
 
 | Tier | Allowed | Forbidden |
 |---|---|---|
-| **1 Sandbox (default)** | Read, write, and modify code inside the project, install packages in a venv or `node_modules`, run local servers and tests, git commits locally, delete and clean unneeded code, dead files, project caches, and ephemeral test artifacts autonomously without human intervention | Anything outside the project, system package removal, network writes to third parties, cloud changes, paid APIs, live payments or credentials, pushing to remotes |
+| **1 Sandbox (default)** | Read, write, and modify code inside the project, install packages in a venv or `node_modules`, run local servers and tests, git commits locally; delete and clean unneeded files, project caches, and ephemeral test artifacts by stating the explicit reason for human approval | Anything outside the project, system package removal, network writes to third parties, cloud changes, paid APIs, live payments or credentials, pushing to remotes |
 | **2 Project plus network** | Tier 1 plus API calls to free or explicitly named services, downloading dependencies and models, `git push` to a named non-main branch | Production deploys, spending, deleting remote resources |
 | **3 Deploy** | Tier 2 plus deploy to a named environment listed in `GOAL.md`, with a rollback command recorded first | Anything not named in `GOAL.md` |
 
 Hard bans in every tier: **Never delete the whole codebase at any cost** (blanket/mass deletions such as `rm -rf *`, `rm -rf .`, deleting project roots or clearing the entire repository are strictly forbidden); `rm -rf /`, `rm -rf ~`, `rm -rf` on any path you have not printed and checked to be inside the project or a known cache, `chmod -R 777`, `curl ... | sh` from unknown sources (well-known installers from official domains such as `uv` or `nvm` are acceptable), disabling firewalls, editing SSH config, creating users, changing IAM or security groups, printing environment secrets, force-push, rewriting shared history.
 
-Before any delete command, print the exact path and confirm it is inside the project or a known cache directory.
+Before any delete command, print the exact path, confirm it is inside the project or a known cache directory, and provide the explicit reason to the user for confirmation.
 
 If the next step needs something outside your tier, do not do it. Log it, implement the nearest safe alternative, and list it in the final report.
 
