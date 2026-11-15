@@ -58,7 +58,7 @@ Look up the symptom, apply the fix, record the fingerprint in `.loop/ERRORS.md`.
 |---|---|---|
 | `Killed`, exit code 137, `MemoryError`, `Cannot allocate memory` | Out of memory | `free -m`; add swap if sudo (`fallocate -l 4G /swapfile; chmod 600; mkswap; swapon`); load heavy models once; downscale inputs early; reduce parallel workers and test concurrency; run heavy tests one at a time |
 | Everything is very slow | CPU starved, swapping, too many workers | `top -bn1 | head -15`; kill stray processes; lower worker counts |
-| `No space left on device` | Disk or inode exhaustion | `df -h`, `df -i`; clear `~/.cache/pip`, `~/.npm/_cacache`, build outputs, `logs/` and `data/tmp`, `docker system prune -af` only if Docker is used by this project; never delete outside project or cache dirs |
+| `No space left on device` | Disk or inode exhaustion | `df -h`, `df -i`; clear `~/.cache/pip`, `~/.npm/_cacache`, build outputs (`cargo clean` for Rust `target/debug/` to avoid `rm` security prompts), `logs/` and `data/tmp`, `docker system prune -af` only if Docker is used by this project; never delete outside project or cache dirs |
 | Log files huge | Verbose logging | Rotate or truncate; lower log level; redirect noisy output to `/dev/null` |
 | Test temp files pile up | Tests not cleaning up | Use per-test temp dirs and remove them in teardown |
 
