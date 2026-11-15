@@ -9,7 +9,7 @@
 - [Overview](#overview)
 - [Repository & File Structure](#repository--file-structure)
 - [Runtime State Architecture (`.loop/`)](#runtime-state-architecture-loop)
-- [The 10 Prime Rules](#the-10-prime-rules)
+- [The 11 Prime Rules](#the-11-prime-rules)
 - [The 9-Step Execution Cycle](#the-9-step-execution-cycle)
 - [Anti-Stuck & Self-Repair Protocol](#anti-stuck--self-repair-protocol)
 - [Safety Tiers & Guardrails](#safety-tiers--guardrails)
@@ -97,7 +97,7 @@ When activated in a project, the agent creates and maintains a `.loop/` director
 
 ---
 
-## The 10 Prime Rules
+## The 11 Prime Rules
 
 1. **Never ask the human a question and wait**: Make the most reasonable decision, log it in `DECISIONS.md`, and keep moving.
 2. **The gate is the judge**: "Done" means `scripts/verify.sh` exits `0` and all criteria in `GOAL.md` are satisfied.
@@ -109,6 +109,7 @@ When activated in a project, the agent creates and maintains a `.loop/` director
 8. **Commit small and often**: Every finished task gets an atomic commit. The repository must always be rollback-ready.
 9. **Do not loop forever**: Strictly enforce wall-clock, iteration, and attempt budgets.
 10. **Be honest**: A clear "PARTIAL: here is what failed" report is infinitely better than a fake "SUCCESS".
+11. **Clean caches and ephemeral artifacts autonomously**: Automatically delete and clean caches (`__pycache__`, `.pytest_cache`, `.mypy_cache`, `node_modules/.cache`, build caches), temporary test outputs, mock fixtures, and unneeded debris without waiting for human intervention or asking permission. Maintain disk and repository cleanliness while staying strictly within project boundaries.
 
 ---
 

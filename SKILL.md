@@ -30,6 +30,7 @@ Detail files (read only when needed):
 8. **Commit small and often.** The repo must always be recoverable to a last known good state.
 9. **Do not loop forever.** Obey the budgets and stop conditions in section 7. Spinning burns money and proves nothing.
 10. **Be honest.** A truthful "PARTIAL, here is what is broken" beats a fake "SUCCESS".
+11. **Clean caches and ephemeral artifacts autonomously.** Automatically and without asking for human intervention, clean up project caches (`__pycache__`, `.pytest_cache`, `.mypy_cache`, `node_modules/.cache`, build artifacts), temporary test outputs/fixtures, mock DB dumps, and unneeded debris. Keep the repository clean and disk usage lean without waiting for permission. Stay strictly inside project boundaries.
 
 ## 2. State directory (your external memory)
 
@@ -76,7 +77,7 @@ Do this in order, without asking the human anything:
 4. PLAN     Write 3 to 6 lines in LOG.md: what, how, and how I will know it worked.
 5. TEST     Write or extend the test/check first (Red).
 6. BUILD    Smallest change that satisfies the check (Green).
-7. REFACTOR & QUALITY  Run linters, type checks, and formatting. Clean up duplicate code and temporary hacks before declaring the task done. (Refactor).
+7. REFACTOR & QUALITY  Run linters, type checks, and formatting. Clean up duplicate code, temporary hacks, ephemeral test artifacts, and caches before declaring the task done. (Refactor & Clean).
 8. VERIFY   Run the relevant checks with `timeout`, then `scripts/verify.sh --quick`.
 9a. PASS    Commit (`Txx: title`), tick the task, tag good states (`git tag -f good-<time>` when the full gate passes),
             append to LOG.md, reset the consecutive failure count, go to 1.
@@ -158,7 +159,7 @@ Stop and run Finishing when **any** is true:
 
 | Tier | Allowed | Forbidden |
 |---|---|---|
-| **1 Sandbox (default)** | Read and write inside the project, install packages in a venv or `node_modules`, run local servers and tests, git commits locally | Anything outside the project, system package removal, network writes to third parties, cloud changes, paid APIs, live payments or credentials, pushing to remotes |
+| **1 Sandbox (default)** | Read and write inside the project, install packages in a venv or `node_modules`, run local servers and tests, git commits locally, delete and clean project caches and ephemeral test artifacts autonomously without human intervention | Anything outside the project, system package removal, network writes to third parties, cloud changes, paid APIs, live payments or credentials, pushing to remotes |
 | **2 Project plus network** | Tier 1 plus API calls to free or explicitly named services, downloading dependencies and models, `git push` to a named non-main branch | Production deploys, spending, deleting remote resources |
 | **3 Deploy** | Tier 2 plus deploy to a named environment listed in `GOAL.md`, with a rollback command recorded first | Anything not named in `GOAL.md` |
 
@@ -187,11 +188,12 @@ If the next step needs something outside your tier, do not do it. Log it, implem
 
 ## 11. Finishing
 
-1. Run the full gate one last time. Save the output to `logs/final_verify.txt`.
-2. If there is a service, make sure it is running under supervision and the health check passes. Record how to reach it.
-3. Write `.loop/FINAL_REPORT.md` (template in `references/state-templates.md`): result in one line (SUCCESS, PARTIAL, or FAILED), table of each acceptance criterion with pass or fail plus evidence, what was built and where, how to run, test, and stop it, blocked tasks and workarounds, decisions made without the human, known weaknesses, and the top 5 next steps for the human in order.
-4. Write `STATE`: `FINISHED <timestamp>` for success, or `STOPPED <reason>` otherwise.
-5. Update `STATUS.md`. Then **stop making changes**.
+1. Clean unneeded temporary test artifacts, test databases, scratch logs, and stale caches to leave a pristine repository state.
+2. Run the full gate one last time. Save the output to `logs/final_verify.txt`.
+3. If there is a service, make sure it is running under supervision and the health check passes. Record how to reach it.
+4. Write `.loop/FINAL_REPORT.md` (template in `references/state-templates.md`): result in one line (SUCCESS, PARTIAL, or FAILED), table of each acceptance criterion with pass or fail plus evidence, what was built and where, how to run, test, and stop it, blocked tasks and workarounds, decisions made without the human, known weaknesses, and the top 5 next steps for the human in order.
+5. Write `STATE`: `FINISHED <timestamp>` for success, or `STOPPED <reason>` otherwise.
+6. Update `STATUS.md`. Then **stop making changes**.
 
 ## 12. Resuming after interruption or context reset
 
