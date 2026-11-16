@@ -14,6 +14,7 @@ Detail files (read only when needed):
 - `references/verify-patterns.md`: how to build the verify gate for each stack and for non-code goals
 - `references/failure-playbook.md`: a large table of symptoms and fixes
 - `references/unattended-setup.md`: server prep, permission settings, drivers, cost caps, morning checklist
+- `references/rea-integration.md`: reverse engineering with REA MCP tools and processing evidence in the loop
 - `scripts/init_loop.sh`, `scripts/loop_driver.sh`, `scripts/status.sh`: helpers
 
 ---
@@ -55,7 +56,7 @@ Everything lives in `<project>/.loop/`. Create it with `bash scripts/init_loop.s
 Do this in order, without asking the human anything:
 
 1. **Find the goal.** Use the user's message. If they pointed to a file (`PRD.md`, `README`, `SPEC`, an issue list), read it fully. If the goal is vague, write the most sensible concrete interpretation and log it in `DECISIONS.md`.
-2. **Survey the environment.** Run and record in `LOG.md`: OS, `nproc`, `free -m`, `df -h /`, language runtimes and versions, package managers, `git status`, whether passwordless `sudo` works (`sudo -n true`), network access (`curl -sI --max-time 5 https://pypi.org`), and what already exists in the project.
+2. **Survey the environment.** Run and record in `LOG.md`: OS, `nproc`, `free -m`, `df -h /`, language runtimes and versions, package managers, `git status`, whether passwordless `sudo` works (`sudo -n true`), network access (`curl -sI --max-time 5 https://pypi.org`), and what already exists in the project. If the task involves reverse engineering, binary reconstruction, or protocol analysis, survey the target artifact using REA MCP tools (`binary_overview`, `inspect_artifact`, `analyze_javascript_application`) and record hashes and symbol counts (see `references/rea-integration.md`).
 3. **Write `GOAL.md`.** Include:
    - One-paragraph goal
    - **Acceptance criteria**: a numbered list where every item is checkable by a command, a test, or an inspected output file. If an item cannot be checked mechanically, rewrite it until it can (see `references/verify-patterns.md`, "Non-code goals").
@@ -94,6 +95,7 @@ Rules of thumb:
 - Prefer boring, well-known solutions that work unattended over clever ones.
 - If two approaches are equal, choose the one that fails loudly and recovers easily.
 - Visual or UX work: save screenshots or rendered output to a `debug/` folder and actually inspect them at least once before calling the task done.
+- Reverse engineering & binary tasks: call REA MCP tools (`procedure_pseudo_code`, `analyze_function`, `inspect_artifact`), parse returned Evidence into test cases and code, and verify fidelity with `compare_functions` or `verify_reconstruction`. Always close open REA sessions.
 
 ## 5. The verify gate (summary)
 
@@ -160,7 +162,7 @@ Stop and run Finishing when **any** is true:
 
 | Tier | Allowed | Forbidden |
 |---|---|---|
-| **1 Sandbox (default)** | Read, write, and modify code inside the project, install packages in a venv or `node_modules`, run local servers and tests, git commits locally, delete and clean unneeded code, dead files, project caches, and ephemeral test artifacts autonomously without prompting | Anything outside the project, system package removal, network writes to third parties, cloud changes, paid APIs, live payments or credentials, pushing to remotes |
+| **1 Sandbox (default)** | Read, write, and modify code inside the project, install packages in a venv or `node_modules`, run local servers and tests, git commits locally, delete and clean unneeded code, dead files, project caches, and ephemeral test artifacts autonomously without prompting; call read-only REA MCP tools (`open_binary`, `binary_overview`, `analyze_function`, `procedure_pseudo_code`, `inspect_artifact`, etc.) on target artifacts and process tool call evidence | Anything outside the project, system package removal, network writes to third parties, cloud changes, paid APIs, live payments or credentials, pushing to remotes |
 | **2 Project plus network** | Tier 1 plus API calls to free or explicitly named services, downloading dependencies and models, `git push` to a named non-main branch | Production deploys, spending, deleting remote resources |
 | **3 Deploy** | Tier 2 plus deploy to a named environment listed in `GOAL.md`, with a rollback command recorded first | Anything not named in `GOAL.md` |
 
@@ -184,6 +186,7 @@ If the next step needs something outside your tier, do not do it. Log it, implem
 - Before starting a service, check the port (`ss -ltnp | grep :<port>` or `lsof -i :<port>`) and stop stale processes you started earlier.
 - Health-check with a timeout (`curl -fsS --max-time 5`), and poll with a deadline instead of fixed sleeps.
 - Always stop test servers you started. Check with `ps aux | grep <name>` before moving on.
+- Always close REA analysis and debug sessions (`close_binary`, `close_frida_session`, `close_rizin_debug_session`) before concluding tasks or loop runs.
 - Each shell tool call may be a fresh shell: re-activate virtualenvs and re-export variables in every command sequence.
 - For a service that must stay up after you finish, use systemd if passwordless sudo exists, else a small watchdog loop (`nohup`) that health-checks every 30 seconds and restarts on failure. Truncate logs over 50 MB.
 

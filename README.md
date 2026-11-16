@@ -54,6 +54,7 @@ autonomous-loop/
 │   └── status.sh                     # Single-screen dashboard & health check script
 └── references/
     ├── failure-playbook.md           # Diagnostic playbook for environment and process failures
+    ├── rea-integration.md            # Reverse engineering & REA MCP tool calling integration
     ├── state-templates.md            # Exact markdown schemas for all .loop/ state files
     ├── unattended-setup.md           # VPS provisioning, headless permission setup & morning checklist
     └── verify-patterns.md            # Recipes for non-gameable verify gates across stacks
@@ -63,12 +64,13 @@ autonomous-loop/
 
 | Component | Path | Description |
 |---|---|---|
-| **Core Protocol** | `SKILL.md` | The universal instruction manual for the agent. Contains the 10 Prime Rules, 9-step execution cycle, anti-stuck ladder, safety tiers, and stop budgets. |
+| **Core Protocol** | `SKILL.md` | The universal instruction manual for the agent. Contains the 12 Prime Rules, 9-step execution cycle, anti-stuck ladder, safety tiers, and stop budgets. |
 | **Scaffolding Tool** | `scripts/init_loop.sh` | Sets up a target project repository with the `.loop/` folder, templates, starter task queue, and a failing `scripts/verify.sh` template. |
 | **Outer Supervisor** | `scripts/loop_driver.sh` | A POSIX bash supervisor that manages multi-session agent execution. Features file locking (`flock`), progress fingerprinting, automated backoff, timeout enforcement, and circuit breaking. |
 | **Health Dashboard** | `scripts/status.sh` | Displays a real-time status summary: heartbeat freshness, task counts (done/todo/blocked), recent commits, driver logs, and final report status. |
 | **State Templates** | `references/state-templates.md` | Standard markdown templates for `GOAL.md`, `TASKS.md`, `LOG.md`, `STATUS.md`, `DECISIONS.md`, `ERRORS.md`, and `FINAL_REPORT.md`. |
 | **Failure Playbook** | `references/failure-playbook.md` | Actionable fixes for common overnight crashes: zombie ports, out-of-memory, swap exhaustion, package lock errors, and timeout hangs. |
+| **REA Integration** | `references/rea-integration.md` | Calling REA MCP tools (`ServerName: "rea"`), processing binary evidence, decompiling, and verifying fidelity. |
 | **Unattended Setup** | `references/unattended-setup.md` | Step-by-step instructions for preparing isolated cloud environments, permissions, and security. |
 | **Verify Patterns** | `references/verify-patterns.md` | Verification gate blueprints for Python, Node.js, Go, Rust, Ruby, Docker, and non-code deliverables. |
 
