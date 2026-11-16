@@ -28,7 +28,7 @@ Detail files (read only when needed):
 5. **Stay inside the project.** Work only inside the project directory plus normal caches. Never touch `~/.ssh`, cloud credentials, system config, other projects, or other users' files.
 6. **Spend no money and make no irreversible external changes** unless `GOAL.md` explicitly allows it (see Safety Tiers, section 8). That covers paid APIs, cloud resources, live payments, emails/messages to real people, pushing to production, and force-pushing.
 7. **No secrets in git or logs.** Use `.env` (gitignored) and `.env.example` with fake values.
-8. **Commit small and often.** The repo must always be recoverable to a last known good state.
+8. **Commit and push every time with descriptive messages.** Every finished, verified task gets an atomic commit with a clear, descriptive commit message explaining what changed and why (e.g. `feat(scope): descriptive summary`), followed immediately by `git push` to GitHub. The remote is always synchronized, transparent, and rollback-ready.
 9. **Do not loop forever.** Obey the budgets and stop conditions in section 7. Spinning burns money and proves nothing.
 10. **Be honest.** A truthful "PARTIAL, here is what is broken" beats a fake "SUCCESS".
 11. **Clean caches and ephemeral artifacts autonomously without prompting.** Automatically clean up project caches (`__pycache__`, `.pytest_cache`, `.mypy_cache`, `node_modules/.cache`, build artifacts such as Rust `target/debug/`), temporary test outputs/fixtures, mock DB dumps, and unneeded debris without asking the human every time. Where available, prefer native build tool clean commands (e.g., `cargo clean` in Rust to reclaim `target/debug` without triggering shell `rm` security prompts). Keep the repository clean and disk usage lean without interruptions. Stay strictly inside project boundaries.
@@ -81,7 +81,7 @@ Do this in order, without asking the human anything:
 6. BUILD    Smallest change that satisfies the check (Green).
 7. REFACTOR & QUALITY  Run linters, type checks, and formatting. Clean up duplicate code, temporary hacks, ephemeral test artifacts, and caches before declaring the task done. (Refactor & Clean).
 8. VERIFY   Run the relevant checks with `timeout`, then `scripts/verify.sh --quick`.
-9a. PASS    Commit (`Txx: title`), tick the task, tag good states (`git tag -f good-<time>` when the full gate passes),
+9a. PASS    Commit with a clear descriptive message (`<type>(scope): description` or `Txx: title`), push immediately to GitHub (`git push origin <branch>`), tick the task, tag good states (`git tag -f good-<time>` when the full gate passes),
             append to LOG.md, reset the consecutive failure count, go to 1.
 9b. FAIL    Anti-stuck protocol (section 6). Never move on silently.
 10. DONE?   When all tasks are ticked or blocked: run the FULL gate.
@@ -162,8 +162,8 @@ Stop and run Finishing when **any** is true:
 
 | Tier | Allowed | Forbidden |
 |---|---|---|
-| **1 Sandbox (default)** | Read, write, and modify code inside the project, install packages in a venv or `node_modules`, run local servers and tests, git commits locally, delete and clean unneeded code, dead files, project caches, and ephemeral test artifacts autonomously without prompting; call read-only REA MCP tools (`open_binary`, `binary_overview`, `analyze_function`, `procedure_pseudo_code`, `inspect_artifact`, etc.) on target artifacts and process tool call evidence | Anything outside the project, system package removal, network writes to third parties, cloud changes, paid APIs, live payments or credentials, pushing to remotes |
-| **2 Project plus network** | Tier 1 plus API calls to free or explicitly named services, downloading dependencies and models, `git push` to a named non-main branch | Production deploys, spending, deleting remote resources |
+| **1 Sandbox (default)** | Read, write, and modify code inside the project, install packages in a venv or `node_modules`, run local servers and tests, commit with clear descriptive messages and `git push` to GitHub after each passing task, delete and clean unneeded code, dead files, project caches, and ephemeral test artifacts autonomously without prompting; call read-only REA MCP tools (`open_binary`, `binary_overview`, `analyze_function`, `procedure_pseudo_code`, `inspect_artifact`, etc.) on target artifacts and process tool call evidence | Anything outside the project, system package removal, network writes to third parties, cloud changes, paid APIs, live payments or credentials, force-pushing, rewriting shared history |
+| **2 Project plus network** | Tier 1 plus API calls to free or explicitly named services, downloading dependencies and models | Production deploys, spending, deleting remote resources |
 | **3 Deploy** | Tier 2 plus deploy to a named environment listed in `GOAL.md`, with a rollback command recorded first | Anything not named in `GOAL.md` |
 
 Hard bans & Codebase Deletion Gate: **Never delete an entire codebase or repository without explicit human approval and reason** (mass/blanket deletions such as `rm -rf *`, `rm -rf .`, or clearing out the project root are never automatic and require explicit confirmation with full justification); `rm -rf /`, `rm -rf ~`, `rm -rf` on any path you have not printed and checked to be inside the project or a known cache, `chmod -R 777`, `curl ... | sh` from unknown sources (well-known installers from official domains such as `uv` or `nvm` are acceptable), disabling firewalls, editing SSH config, creating users, changing IAM or security groups, printing environment secrets, force-push, rewriting shared history.

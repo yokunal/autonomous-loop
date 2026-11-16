@@ -108,7 +108,7 @@ When activated in a project, the agent creates and maintains a `.loop/` director
 5. **Stay inside the project**: Never touch `~/.ssh`, cloud credentials, system configurations, or parent directories.
 6. **Spend zero money without explicit permission**: Paid APIs, cloud deployments, and production push require Tier 2 or Tier 3 permissions in `GOAL.md`.
 7. **No secrets in git or logs**: Always utilize gitignored `.env` with fake template values in `.env.example`.
-8. **Commit small and often**: Every finished task gets an atomic commit. The repository must always be rollback-ready.
+8. **Commit and push every time with descriptive messages**: Every finished, verified task gets an atomic commit with a clear, descriptive commit message explaining what changed and why, followed immediately by `git push` to GitHub. The remote is always synchronized, transparent, and rollback-ready.
 9. **Do not loop forever**: Strictly enforce wall-clock, iteration, and attempt budgets.
 10. **Be honest**: A clear "PARTIAL: here is what failed" report is infinitely better than a fake "SUCCESS".
 11. **Clean caches and ephemeral artifacts autonomously without prompting**: Automatically delete and clean caches (`__pycache__`, `.pytest_cache`, `.mypy_cache`, `node_modules/.cache`, build artifacts such as Rust `target/debug/`), temporary test outputs, mock fixtures, and unneeded debris without waiting for human intervention or asking every time. Prefer native tool cleaners (e.g. `cargo clean` for Rust) to reclaim disk without triggering shell `rm` security prompts. Maintain disk and repository cleanliness while staying strictly within project boundaries.
@@ -131,7 +131,7 @@ flowchart TD
     E --> F[6. BUILD: Minimal code change - Green]
     F --> G1[7. REFACTOR: Lint, types & clean code - Refactor]
     G1 --> G[8. VERIFY: Run checks & scripts/verify.sh]
-    G -->|Pass| H1[9a. PASS: Commit, mark [x], reset error count]
+    G -->|Pass| H1[9a. PASS: Commit, push to GitHub, mark [x], reset error count]
     G -->|Fail| H2[9b. FAIL: Anti-Stuck Ladder & Meta-Verification]
     H1 --> I{All Tasks Done?}
     H2 --> C
